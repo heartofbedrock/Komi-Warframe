@@ -11,7 +11,16 @@ let winner = null;
 let player = 0;
 
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
-const ws = new WebSocket(`${wsProto}://${location.host}`);
+const params = new URLSearchParams(location.search);
+let room = params.get('room');
+if (!room) {
+    room = Math.random().toString(36).slice(2, 8);
+    params.set('room', room);
+    history.replaceState(null, '', `?${params.toString()}`);
+}
+const ws = new WebSocket(`${wsProto}://${location.host}?room=${room}`);
+
+const turnEl = document.getElementById('turn');
 
 ws.addEventListener('message', (ev) => {
     const msg = JSON.parse(ev.data);
@@ -53,6 +62,11 @@ function draw() {
     }
 
     document.getElementById('score').textContent = `${captured[1]} - ${captured[2]}`;
+    if (winner) {
+        turnEl.textContent = `Winner: Player ${winner}`;
+    } else {
+        turnEl.textContent = current === 1 ? "Black's Turn" : "White's Turn";
+    }
 }
 
 function drawStone(x,y,val){

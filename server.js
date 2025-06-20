@@ -20,12 +20,28 @@ app.get('/handshake', (req, res) => {
 // ----- Game state -----
 const BOARD_SIZE = 9;
 const CAPTURE_LIMIT = 10;
-let board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
-let current = 1;
-let captured = { 1: 0, 2: 0 };
-let banned = new Set();
-let winner = null;
-let availablePlayers = [1, 2];
+
+const sessions = {};
+
+function createSession(id) {
+  return {
+    id,
+    board: Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0)),
+    current: 1,
+    captured: { 1: 0, 2: 0 },
+    banned: new Set(),
+    winner: null,
+    availablePlayers: [1, 2],
+    clients: new Set(),
+  };
+}
+
+function getSession(id) {
+  if (!sessions[id]) {
+    sessions[id] = createSession(id);
+  }
+  return sessions[id];
+}
 
 function neighbors(x, y) {
   return [
@@ -36,7 +52,7 @@ function neighbors(x, y) {
   ].filter(([nx, ny]) => nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE);
 }
 
-function floodFill(x, y, color, visited) {
+function floodFill(board, x, y, color, visited) {
   const stack = [[x, y]];
   const group = [];
   const libs = new Set();
@@ -57,16 +73,16 @@ function floodFill(x, y, color, visited) {
   return { group, libs };
 }
 
-function removeCaptured(x, y) {
-  const enemy = current === 1 ? 2 : 1;
+function removeCaptured(session, x, y) {
+  const enemy = session.current === 1 ? 2 : 1;
   const visited = new Set();
   const removed = [];
   for (const [nx, ny] of neighbors(x, y)) {
-    if (board[ny][nx] === enemy && !visited.has(`${nx},${ny}`)) {
-      const { group, libs } = floodFill(nx, ny, enemy, visited);
+    if (session.board[ny][nx] === enemy && !visited.has(`${nx},${ny}`)) {
+      const { group, libs } = floodFill(session.board, nx, ny, enemy, visited);
       if (libs.size === 0) {
         for (const [gx, gy] of group) {
-          board[gy][gx] = 0;
+          session.board[gy][gx] = 0;
           removed.push([gx, gy]);
         }
       }
@@ -75,37 +91,42 @@ function removeCaptured(x, y) {
   return removed;
 }
 
-function resetBoard() {
-  board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
-  current = 1;
-  captured = { 1: 0, 2: 0 };
-  banned = new Set();
-  winner = null;
+function resetBoard(session) {
+  session.board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
+  session.current = 1;
+  session.captured = { 1: 0, 2: 0 };
+  session.banned = new Set();
+  session.winner = null;
 }
 
-function payload(player) {
+function payload(session, player) {
   return {
     type: 'state',
     player,
-    board,
-    captured,
-    current,
-    banned: [...banned],
-    winner,
+    board: session.board,
+    captured: session.captured,
+    current: session.current,
+    banned: [...session.banned],
+    winner: session.winner,
   };
 }
 
-function broadcast() {
-  wss.clients.forEach((client) => {
+function broadcast(session) {
+  session.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(payload(client.player)));
+      client.send(JSON.stringify(payload(session, client.player)));
     }
   });
 }
 
-wss.on('connection', (ws) => {
-  ws.player = availablePlayers.length ? availablePlayers.shift() : 0;
-  ws.send(JSON.stringify(payload(ws.player)));
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const room = url.searchParams.get('room') || 'default';
+  const session = getSession(room);
+  ws.session = session;
+  ws.player = session.availablePlayers.length ? session.availablePlayers.shift() : 0;
+  session.clients.add(ws);
+  ws.send(JSON.stringify(payload(session, ws.player)));
 
   ws.on('message', (data) => {
     let msg;
@@ -118,35 +139,36 @@ wss.on('connection', (ws) => {
     if (msg.type === 'move') {
       const { x, y } = msg;
       if (
-        ws.player === current &&
-        !winner &&
+        ws.player === session.current &&
+        !session.winner &&
         x >= 0 &&
         x < BOARD_SIZE &&
         y >= 0 &&
         y < BOARD_SIZE &&
-        board[y][x] === 0 &&
-        !banned.has(`${x},${y}`)
+        session.board[y][x] === 0 &&
+        !session.banned.has(`${x},${y}`)
       ) {
-        board[y][x] = ws.player;
-        const removed = removeCaptured(x, y);
-        captured[ws.player] += removed.length;
-        banned = new Set(removed.map(([rx, ry]) => `${rx},${ry}`));
-        if (captured[ws.player] >= CAPTURE_LIMIT) {
-          winner = ws.player;
+        session.board[y][x] = ws.player;
+        const removed = removeCaptured(session, x, y);
+        session.captured[ws.player] += removed.length;
+        session.banned = new Set(removed.map(([rx, ry]) => `${rx},${ry}`));
+        if (session.captured[ws.player] >= CAPTURE_LIMIT) {
+          session.winner = ws.player;
         } else {
-          current = current === 1 ? 2 : 1;
+          session.current = session.current === 1 ? 2 : 1;
         }
-        broadcast();
+        broadcast(session);
       }
-    } else if (msg.type === 'reset' && winner && ws.player) {
-      resetBoard();
-      broadcast();
+    } else if (msg.type === 'reset' && session.winner && ws.player) {
+      resetBoard(session);
+      broadcast(session);
     }
   });
 
   ws.on('close', () => {
+    session.clients.delete(ws);
     if (ws.player > 0) {
-      availablePlayers.push(ws.player);
+      session.availablePlayers.push(ws.player);
     }
   });
 });
