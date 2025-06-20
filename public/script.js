@@ -10,23 +10,54 @@ let banned = new Set();
 let winner = null;
 let player = 0;
 
+const setupEl = document.getElementById('setup');
+const uidField = document.getElementById('uidField');
+const otherField = document.getElementById('otherField');
+const startBtn = document.getElementById('startBtn');
+
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
 const params = new URLSearchParams(location.search);
+let uid = params.get('uid');
+let other = params.get('other');
+
+if (!uid) {
+    uid = localStorage.getItem('komiId') || Math.random().toString(36).slice(2,8);
+    localStorage.setItem('komiId', uid);
+    params.set('uid', uid);
+    history.replaceState(null, '', `?${params.toString()}`);
+}
+
+uidField.value = uid;
+if (other) {
+    otherField.value = other;
+    setupEl.style.display = 'none';
+} else {
+    setupEl.style.display = 'block';
+}
+
+startBtn.addEventListener('click', () => {
+    const my = uidField.value.trim();
+    const oth = otherField.value.trim();
+    if (!my || !oth) return;
+    params.set('uid', my);
+    params.set('other', oth);
+    const ids = [my, oth].sort();
+    params.set('room', `${ids[0]}_${ids[1]}`);
+    location.search = '?' + params.toString();
+});
+
 let room = params.get('room');
-
-const uid = params.get('uid');
-const other = params.get('other');
-
 if (!room) {
     if (uid && other) {
         const ids = [uid, other].sort();
         room = `${ids[0]}_${ids[1]}`;
     } else {
-        room = Math.random().toString(36).slice(2, 8);
+        room = Math.random().toString(36).slice(2,8);
     }
     params.set('room', room);
     history.replaceState(null, '', `?${params.toString()}`);
 }
+
 const queryParts = [`room=${encodeURIComponent(room)}`];
 if (uid) queryParts.push(`uid=${encodeURIComponent(uid)}`);
 if (other) queryParts.push(`other=${encodeURIComponent(other)}`);
