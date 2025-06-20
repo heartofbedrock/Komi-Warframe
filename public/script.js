@@ -13,12 +13,24 @@ let player = 0;
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
 const params = new URLSearchParams(location.search);
 let room = params.get('room');
+
+const uid = params.get('uid');
+const other = params.get('other');
+
 if (!room) {
-    room = Math.random().toString(36).slice(2, 8);
+    if (uid && other) {
+        const ids = [uid, other].sort();
+        room = `${ids[0]}_${ids[1]}`;
+    } else {
+        room = Math.random().toString(36).slice(2, 8);
+    }
     params.set('room', room);
     history.replaceState(null, '', `?${params.toString()}`);
 }
-const ws = new WebSocket(`${wsProto}://${location.host}?room=${room}`);
+const queryParts = [`room=${encodeURIComponent(room)}`];
+if (uid) queryParts.push(`uid=${encodeURIComponent(uid)}`);
+if (other) queryParts.push(`other=${encodeURIComponent(other)}`);
+const ws = new WebSocket(`${wsProto}://${location.host}?${queryParts.join('&')}`);
 
 const turnEl = document.getElementById('turn');
 

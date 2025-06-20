@@ -121,7 +121,19 @@ function broadcast(session) {
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const room = url.searchParams.get('room') || 'default';
+  let room = url.searchParams.get('room');
+  const uid = url.searchParams.get('uid');
+  const other = url.searchParams.get('other');
+
+  if (!room) {
+    if (uid && other) {
+      const ids = [uid, other].sort();
+      room = `${ids[0]}_${ids[1]}`;
+    } else {
+      room = 'default';
+    }
+  }
+
   const session = getSession(room);
   ws.session = session;
   ws.player = session.availablePlayers.length ? session.availablePlayers.shift() : 0;
