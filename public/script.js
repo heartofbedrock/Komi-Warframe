@@ -108,7 +108,7 @@ function draw() {
     if (winner) {
         turnEl.textContent = `Winner: Player ${winner}`;
     } else {
-        turnEl.textContent = current === 1 ? "Black's Turn" : "White's Turn";
+        turnEl.textContent = current === 1 ? "White's Turn" : "Black's Turn";
     }
 }
 
