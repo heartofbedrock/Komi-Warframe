@@ -121,7 +121,8 @@ function broadcast(session) {
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  let room = url.searchParams.get('room');
+  const channelId = url.searchParams.get('channel_id');
+  let room = channelId ? `channel_${channelId}` : url.searchParams.get('room');
   const uid = url.searchParams.get('uid');
   const other = url.searchParams.get('other');
 

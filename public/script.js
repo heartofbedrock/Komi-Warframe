@@ -19,6 +19,7 @@ const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
 const params = new URLSearchParams(location.search);
 let uid = params.get('uid');
 let other = params.get('other');
+const channelId = params.get('channel_id');
 
 if (!uid) {
     uid = localStorage.getItem('komiId') || Math.random().toString(36).slice(2,8);
@@ -28,7 +29,9 @@ if (!uid) {
 }
 
 uidField.value = uid;
-if (other) {
+if (channelId) {
+    setupEl.style.display = 'none';
+} else if (other) {
     otherField.value = other;
     setupEl.style.display = 'none';
 } else {
@@ -46,7 +49,7 @@ startBtn.addEventListener('click', () => {
     location.search = '?' + params.toString();
 });
 
-let room = params.get('room');
+let room = channelId ? `channel_${channelId}` : params.get('room');
 if (!room) {
     if (uid && other) {
         const ids = [uid, other].sort();
@@ -61,6 +64,7 @@ if (!room) {
 const queryParts = [`room=${encodeURIComponent(room)}`];
 if (uid) queryParts.push(`uid=${encodeURIComponent(uid)}`);
 if (other) queryParts.push(`other=${encodeURIComponent(other)}`);
+if (channelId) queryParts.push(`channel_id=${encodeURIComponent(channelId)}`);
 const ws = new WebSocket(`${wsProto}://${location.host}?${queryParts.join('&')}`);
 
 const turnEl = document.getElementById('turn');
