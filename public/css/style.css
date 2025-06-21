@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1e272e, #485460);
+    color: #f5f6fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    margin: 20px 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+#setup {
+    margin-bottom: 20px;
+}
+
+#game {
+    display: block;
+    margin: 20px auto;
+    background: #2d3436;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    border-radius: 8px;
+}
+
+#score, #turn {
+    position: absolute;
+    top: 10px;
+    font-size: 1.2rem;
+}
+
+#score {
+    right: 20px;
+}
+
+#turn {
+    left: 20px;
+}
+
+.offset {
+    margin-left: 10px;
+}
+
