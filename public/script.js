@@ -83,10 +83,10 @@ ws.addEventListener('message', (ev) => {
 });
 
 function draw() {
-    ctx.fillStyle = '#2c3e50';
+    ctx.fillStyle = '#34495e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = '#bdc3c7';
+    ctx.strokeStyle = '#ecf0f1';
     ctx.lineWidth = 2;
     for(let i=0;i<=BOARD_SIZE;i++) {
         const offset = MARGIN + i*CELL_SIZE;
@@ -124,7 +124,7 @@ function drawStone(x,y,val){
     ctx.beginPath();
     ctx.arc(cx,cy,r,0,Math.PI*2);
     ctx.fill();
-    ctx.strokeStyle = '#95a5a6';
+    ctx.strokeStyle = '#bdc3c7';
     ctx.stroke();
 }
 

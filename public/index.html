@@ -4,21 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Komi Warframe</title>
-    <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #222; color: #eee; }
-        #game { display: block; margin: 40px auto; background: #34495e; }
-        #score { position: absolute; top: 10px; right: 20px; font-size: 24px; }
-        #turn { position: absolute; top: 10px; left: 20px; font-size: 24px; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <h1>Komi Warframe</h1>
     <div id="turn"></div>
     <div id="score">0 - 0</div>
-    <div id="setup" style="text-align:center; margin-top:10px;">
+    <div id="setup">
         <label>Your Code: <input id="uidField" size="8"></label>
-        <label style="margin-left:10px;">Opponent's Code: <input id="otherField" size="8"></label>
+        <label class="offset">Opponent's Code: <input id="otherField" size="8"></label>
         <button id="startBtn">Start Game</button>
-        <label style="margin-left:10px;">Create a Code and enter your opponent's code to start a game!</label>
+        <label class="offset">Create a Code and enter your opponent's code to start a game!</label>
     </div>
     <canvas id="game" width="760" height="760"></canvas>
     <script src="script.js"></script>
