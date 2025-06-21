@@ -74,7 +74,7 @@ def draw_board():
 
     # Draw score and turn
     score_surf = small_font.render(
-        f"Captures: {captured_counts[1]} - {captured_counts[2]}", True, WHITE
+        f"Captures: {captured_counts[1]} - {captured_counts[2]}", True, BLACK
     )
     screen.blit(
         score_surf,
